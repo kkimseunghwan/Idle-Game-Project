@@ -1,0 +1,434 @@
+### 게임 플랫폼
+
+- 모바일 게임
+
+### 프로젝트 생성
+
+- Unity 버전 : 6.0 LTS
+- 프로젝트 Template : Universal 2D
+- 프로젝트 이름 : Idle_Game_Project
+- 프로젝트 저장 위치 : D:\Hwan\Unity Project
+
+### 프로젝트 폴더 구조 설계 (임시)
+
+- 프로젝트 폴더 구조
+    
+    ```csharp
+    Assets/
+      _App/                          # 게임 ‘컨텐츠’ 영역
+        Scenes/                      # 씬(이름 규칙: 00_Boot, 10_Menu, 20_Game ...)
+          00_Boot.unity
+          10_Menu.unity
+          20_Game.unity
+        Scripts/                     # 게임 로직 (asmdef 권장: App.Game)
+          Gameplay/
+          UI/
+          Systems/
+        Prefabs/
+          UI/
+          Actors/
+          Props/
+        UI/                          # UI 뷰/스프라이트/에셋(씬은 Scenes에만)
+          Sprites/
+          Atlases/                   # Sprite Atlas(v2) 자산(= *.spriteatlasv2)
+            UI_Atlas.spriteatlasv2
+          Fonts/
+          Materials/
+        Art/                         # 게임 스프라이트(비UI)
+          Sprites/
+          Atlases/
+            Gameplay_Atlas.spriteatlasv2
+          Materials/
+        Audio/
+          BGM/
+          SFX/
+        Addressables/                # 그룹/라벨 운영 참고자료, 혹은 그룹별 SO 설정 등
+        Presets/                     # Import Preset 보관(텍스처/오디오 등)
+          Tex_Sprite_Default.preset
+          Tex_UI_Sprite.preset
+        Settings/                    # 프로젝트 세팅 에셋(입력, 품질, 그래픽 등)
+          InputSystem.inputactions
+          QualitySettings.asset
+        Data/                        # ScriptableObject, 밸런스 데이터, Localization 테이블
+      _Core/                         # 공용/엔진 레벨(게임과 분리 유지)
+        Scripts/                     # 코어 유틸/부트/플랫폼 래퍼 (asmdef: App.Core)
+          Boot/
+            AppBootstrap.cs
+            Physics2DSetup.cs
+          Services/
+          Utils/
+        Shaders/
+        Materials/
+        Addressables/                # 코어 리소스(공통 아이콘 등)
+        Presets/                     # 전역 Import Preset(공용)
+      Plugins/                       # 외부 SDK/플러그인(Native/Managed)
+        Android/
+        iOS/
+        Managed/
+      ThirdParty/                    # 오픈소스/상용 애셋(원본 유지, 수정은 Fork 폴더)
+        <AssetName>/
+      Editor/                        # 에디터 전용 툴/메뉴 (asmdef: App.Editor)
+      Tests/                         # PlayMode/Editor 테스트
+    
+    ```
+    
+
+## 프로젝트 기본 세팅 (모바일 공통)
+
+### 빌드 세팅
+
+- File - Build Profiles
+    - **Android** 선택 → **Switch Platform**
+- Build: Android(IL2CPP / ARM64 only / Min 24+, Target 34+)
+
+### SDK/NDK 확인(권장: Hub 관리)
+
+- Edit ▸ Preferences… ▸ External Tools
+    - **Android** 섹션에서 **Use Unity Hub (recommended)** 체크 3개(**JDK/SDK/NDK**)가 켜져있는지 확인.
+        
+        ![image.png](attachment:afaf8805-fc92-43ca-8b97-a2e06c3fef64:image.png)
+        
+    - JDK/SDK/NDK
+        - 최종적으로 유니티 프로젝트를 → 안드로이드 앱(APK/AAB) 으로 만들기 위해 이 세 가지(JDK/SDK/NDK)가 순차적으로 사용됨.
+        - JDK
+        Gradle(빌드 시스템)이 자바 기반이라서, 실행 자체가 JDK에 의존.
+        C# 코드가 변환된 결과물을 패키징하기 전에, 자바 툴체인으로 프로젝트를 컴파일/관리함.
+        - SDK
+        안드로이드 전용 라이브러리와 빌드 도구가 필요.
+        앱 서명, APK/AAB 생성, AndroidManifest 관리, 디바이스 테스트(`adb`) 같은 과정을 담당.
+        - NDK
+        유니티의 IL2CPP 옵션(권장)을 쓸 때, C# 코드 → C++ → 기기용 기계어 변환이 필요.
+        이걸 안 하면 ARM64 같은 실제 모바일 칩셋에서 동작할 수 있는 바이너리를 못 만듬.
+
+### 플레이어 설정 – Android 탭
+
+- Edit ▸ Project Settings ▸ Player ▸ Android ▸ Other Settings
+    - Scripting Backend: IL2CPP
+        - 성능↑(JIT→AOT 네이티브), 치트/리플렉션 악용 난이도↑, 크래시 덜함.
+        - 첫 빌드 시간이 길고, NDK 필수. 리플렉션 많이 쓰면 링크 설정 필요.
+    - **Target Architectures**: **ARM64**만 체크 (ARMv7 해제)
+        - 최신 단말은 모두 ARM64. 단일 아키텍처면 **APK/AAB 용량↓**, QA 매트릭스↓, 빌드 시간↓.
+    - **Minimum API Level**: **Android 7.0 (API 24**)
+        - 기본값 : Android 6.0 marshmallow (API Level 23)
+        옛날 구식 버전이라 API 개발이 멈춰 더 이상 버전 지원이 안될 수도 있음
+        - Android 7.0 :  최신 권한·보안 모델이 강화됨.
+        → 파일 공유(FileProvider)), 네트워크 정책(HTTPS 강제), 멀티윈도우 대응이 필요해짐.
+        → 최신 SDK/플러그인과 충돌 위험이 줄어듬.
+    - **Target API Level**: **Android 15 (API 35)**
+        - Automatic (highest installed)
+        → Unity가 PC에 설치된 Android SDK 중 가장 높은 버전을 자동 선택.
+        → 개발 PC마다 설치된 SDK 버전이 다르면 → 팀 빌드 환경 불일치.
+        → “Play 심사 필수 Target API”와 맞지 않게 빌드될 위험.
+        → Unity/Gradle 버전이 아직 해당 최신 API 지원을 검증 안 한 경우 → 빌드 오류 가능.
+        - 구글은 매년 “Target API Level N 이상” 정책을 강제함.
+            - https://support.google.com/googleplay/android-developer/answer/11926878?hl=ko
+            - 2025년 8월 31일 기준. Android 15(API 수준 35) 이상으로 맞추도록 함.
+            - 자동으로 두면 SDK 설치 상태 따라 낮게 잡힐 수도 있어 심사 리젝트 위험이 있음.
+        - 협업/CI 환경에서는 고정된 API가 훨씬 안정적임.
+            - 지금은 1인 개발이긴 한데, 이런 걸 또 신경 쓰는 버릇을 들여놔야 나중에 회사 가서 일할 때 좋을 것 같음.
+    - **Internet Access**: Auto (기본값)
+        - 말 그대로 인터넷 쓰는 게임인지 권한 설정.
+        인터넷 하나도 안쓰는 오프라인 게임 아니면 그냥 기본값으로 두는게 좋은 듯.
+    - **Managed Stripping Level**: **Medium**(추후 High로 올려도 됨. 리플렉션 사용 시 `link.xml` 준비)
+        - **Managed Stripping  :** 빌드할 때 **쓰이지 않는(걸로 보이는) C# IL 코드**를 UnityLinker가 잘라내는 과정
+        → 앱 용량↓, 메모리↓, 로드 속도↑.
+        → 플렉션/직렬화/문자열 기반 로딩처럼 “정적 분석으로 찾기 어려운 참조”는 “안 쓰는 코드”로 오인되어 잘릴 위험이 있음.
+        - 기본값: minimal 
+        ⇒ **Medium :** 크기·안정성 밸런스 적절히 최적화 가능.
+        - 위험성이 있기 때문에 추후, `link.xml` 혹은 [Preserve]로 코드에 명시.
+    - **Optimize Mesh Data**: 체크
+        - 빌드 시 각 메시의 버텍스 채널 중 “실제로 셰이더가 쓰는 것만 남기고 나머지를 삭제”해서 용량·메모리·로드 시간을 줄여주는 최적화 관련 설정.
+        ⇒ 앱 크기↓, VRAM/메모리↓, 로딩/스트리밍↑.
+    - **Strip Engine Code**: 체크 (주의 필요)
+        - 빌드 결과물에서 Unity 엔진의 사용되지 않는 네이티브/매니지드 모듈을 잘라내 실행 파일/라이브러리 크기와 시작 시간을 줄임.
+        ⇒ 앱 크기↓, 시작/로드 속도↑
+        - 예: 프로젝트에서 **ParticleSystem/Video/AR/Animation 등 특정 엔진 서브시스템**을 안 쓰면 해당 모듈을 제거.
+        - Addressables/리플렉션 쓰면 보존 처리 필요.
+        **⇒ 주의해야할 상황에 대해서는 이해가 잘 안되기에 추후 추가 정리 필요해 보임**
+    - **Publishing Settings**
+        - 지금은 **Keystore** 미설정으로 두어도 괜찮음(내부 테스트 전까지). 배포 단계에서 생성.
+
+### 빌드 출력 형식 (나중에 설정해도 되긴 함)
+
+- **Build Profils**에서 **Build App Bundle (Google Play)** 체크(AAB).
+⇒ 초반엔 APK도 괜찮지만, 스토어는 AAB 권장.
+
+### 기본 해상도/회전(2D 캐주얼 일반값)
+
+- **Default Orientation**: Portrait
+    - 화면 방향 고정해주는 설정
+    → 세로 전용 게임에서는 **Portrait 고정**이 가장 깔끔
+- **Render Outside Safe Area**: 체크 해제(필요 시 켜기)
+    - 기기의 UI가 가리는 영역 (노치, 펀치홀, 홈바 등) = **Safe Area**
+    - 체크 시, 해당 영역까지 확장하여 렌더링. → 기기의 UI에 의해 화면이 가려질 수 있음.
+
+> GameManager 같은 코드에 나중에 Application.targetFrameRate = 60; 설정 하기.
+> 
+
+### 품질 / VSync / 60fps 설정
+
+- **품질 레벨 만들기(모바일 전용) → Edit ▸ Project Settings ▸ Quality**
+    
+    ![image.png](attachment:6b6e4869-4269-4e32-ba1e-508d91153634:image.png)
+    
+    - 하단 “Add Quaility Level”로 새 레벨 생성 → 이름: `Mobile_Default`
+    **⇒ Android** 열의 초록 체크를 `Mobile_Default`에 두기(기본 품질로 사용)
+- **VSync Count**: **Don’t Sync 설정**
+    - **VSync 끄기(프레임은 코드로 제어)**
+    - VSync (Vertical Synchronization, 수직 동기화)
+    모니터의 주사율(Hz)과 게임의 프레임 출력(FPS)을 맞추는 기능.
+    - 끄는 이유
+    설정 시, 게임 FPS가 모니터 주사율에 **강제로 묶임** (예: 60Hz 모니터 → 최대 60fps).
+    ⇒ 화면 찢김 등의 문제 발생하지 않음
+    ⇒ 근데 프레임이 모니터 주사율에 맞춰 “대기”해야 해서 **입력 지연(인풋 랙)** 발생.
+- 모바일 2D용 기본 품질 값 설정.
+    - **Anisotropic Textures**: Per Texture
+        - Per Texture로 두면, **특수한 텍스처만 필요할 때 켤 수 있음** → 불필요한 낭비 방지.
+    - **Skin Weights**: 2 Bones (2D에선 영향 적음)
+    - **Texture Quality**: Full Res (압축은 임포트 단계에서 처리)
+- **Android 프레임 페이싱 최적화**
+    - **Edit ▸ Project Settings ▸ Player ▸ Android ▸ Resolution and Presentation**
+        - **Optimized Frame Pacing**: **On**
+1. **코드로 60fps 고정**
+- `Assets/_App/Boot/GameBootstrap.cs` 생성
+
+```csharp
+using UnityEngine;
+
+public class AppBootstrap : MonoBehaviour
+{
+    [SerializeField] int targetFps = 60;
+
+    void Awake()
+    {
+        QualitySettings.vSyncCount = 0;          // VSync 비활성
+        Application.targetFrameRate = targetFps;  // 60fps 타깃
+        Screen.sleepTimeout = SleepTimeout.NeverSleep;
+        DontDestroyOnLoad(gameObject); // 오브젝트 유지
+    }
+}
+
+```
+
+### Color Space: Gamma 설정
+
+- **Edit ▸ Project Settings ▸ Player ▸ Other Settings ▸ Color Space**: **Gamma** 선택
+    - Linear : 빛의 밝기 계산을 실제 물리와 비슷하게 처리.
+    - Gamma : 더 단순한 색 계산(감마 보정된 공간에서 직접 연산). 계산량이 적어서 **성능 효율적**.
+    ⇒ 2D 캐주얼 게임에 더 잘맞음.
+        - 2D 캐주얼에서 라이트/포스트를 거의 쓰지 않으면 Linear의 이점이 작고, **Gamma가 성능/색 관리가 단순**해서 안전함.
+        - Linear로 바꿔도 시각적으로 큰 이득이 없음.
+        오히려 색감이 바래 보이거나 원본 아트 색과 달라 보이는 경우 있음 
+        → 그래서 Gamma 유지가 안전.
+
+### Physics 2D (Iteration / Query)
+
+- **물리 반복 수 조정 :** **Edit ▸ Project Settings ▸ Physics 2D**
+    - **Velocity Iterations**: **6**
+        - 접촉/마찰/반발 같은 **속도 관련** 제약을 몇 번 반복해 풀지
+        → (기본값:8)살짝 낮춰 CPU 비용을 줄이는 설정
+        - 주의: 너무 낮으면 미끄러짐/마찰 계산이 부정확, 스택이 덜 버티거나 튀는 느낌.
+    - **Position Iterations**: **3** (2~3 중 권장값)
+        - 관통을 줄이고 겹침을 풀기 위한 위치 보정 반복 횟수.
+- **쿼리 옵션**
+    - **Queries Start In Colliders**: **Off**
+        - 레이/오버랩의 시작점이 콜라이더 내부일 때 히트를 줄것인지.
+        - OFF하는 이유? 
+        **→** 레이캐스트가 콜라이더 내부에서 시작할 때 히트 처리 방지하여 플레이어 본체에서 쏘는 레이(발밑 그라운드 체크 등)가 자기 콜라이더를 곧장 맞아버리는 오검출을 방지.
+
+### Texture & SpriteAtlas 설정
+
+- Android 전역 옵션 설정 : File ▸ Build Profiles ▸ Android
+    - Texture Compression : Use Player Setting 으로 설정
+    (개별 에셋/프리셋에서 정한 포맷을 그대로 사용하도록)
+- 텍스처 임포트 프리셋 만들기
+    - 기본 스프라이트 프리셋(일반용)
+        - **Texture Type**: **Sprite (2D and UI)**
+        - **Sprite Mode**: Single/Multiple(필요에 따라)
+        - **Mesh Type**: **Tight**
+        - **Read/Write Enabled**: **Off**
+        - **sRGB (Color Texture)**: On
+        - **Generate Mip Maps**: **Off**(일반 2D는 보통 Off, 원근/스케일 변동 많으면 On)
+        - **Filter Mode**: Bilinear(픽셀아트면 Point)
+        - **Max Size**: **1024**(필요 시 2048)
+        - **Compression**: **Normal**
+        - **Override for Android**: **On → Format: ASTC 6×6**
+        
+        ⇒ Inspector 우측 상단 설정 버튼 누르고 Create New Preset 클릭 → 저장
+        
+- Preset Manager로 자동 적용 : **Edit ▸ Project Settings ▸ Preset Manager**
+    - **TextureImporter** 항목에 규칙 추가:
+        - 작동 방식: 경로 필터(`path:`)를 걸고, 매칭되면 해당 프리셋을 자동 적용.
+        - **Filter**: `path:Assets/` → **Default Preset**: `Tex_Sprite_Default`
+            
+            ![image.png](attachment:062b771a-1fd3-4677-b1dd-6308ccd07819:image.png)
+            
+- ASTC 포멧으로 설정하는 이유.
+    - ASTC 포맷은 ARM과 AMD가 공동으로 개발한 이미지 텍스처 압축 방식으로, 3D 그래픽에서 텍스처의 품질과 압축 효율을 동시에 높이는 것이 특징.
+    - ASTC는 최신 Android 표준 압축 포맷으로, 용량 절약, 품질 유지, GPU 효율을 모두 잡을 수 있기 때문에 2D 프로젝트에서 Format을 ASTC로 지정하는 것이 좋음
+
+### Sprite Atlas(v2) 구성
+
+- 아틀라스 생성 : 프로젝트 창 **우클릭 ▸ Create ▸ 2D ▸ Sprite Atlas (v2)**
+    - **Include in Build**: On
+    - **Objects for Packing**: 관련 폴더 전체 드래그(예: `Assets/_App/UI/Sprites`)
+    - **Packing**:
+        - **Tight Packing**: On
+        - **Allow Rotation**: UI는 **Off**(에지 케어), 게임 스프라이트는 On 가능
+        - **Padding**: **2~4**
+        - **Alpha Dilate**(혹은 Edge Padding): **On** (경계선 이슈 방지)
+    - **Platform Settings ▸ Android**:
+        - **Override**: On → **Format: ASTC 4×4(UI) / 6×6(게임용)**
+        - **Use Mip Maps**: UI는 **Off**, 게임 스프라이트는 필요 시 On
+    - **Pack Preview** 눌러 결과 확인 및 저장
+
+⇒ 문제 발생. 아틀라스 생성 시 지정한 경로로 파일 업로드 시, Preset으로 인한 이미지 압축, 그리고 아틀라스 설정으로 인한 이미지 압축, 2중 압축이 되어서 이미지가 손상될 수 있다는 경고문 발생.
+
+<aside>
+⚠️
+
+Source Texture (Assets/_App/Art/Sprites/supercent.png) of Sprite (supercent) is using compressed format. To ensure no loss in source pixel details when packing to SpriteAtlas, please use uncompressed format in TextureImporter.
+
+</aside>
+
+⇒ 해결: 아틀라스 포멧 용 원본 이미지를 유지할 수 있는 프리셋을 하나 더 생성하여, 설정한 경로에 파일이 추가 될 경우에는 아틀라스의 포멧만 적용되도록 지정.
+
+### 프로젝트 전역 오디오 설정
+
+- **Edit ▸ Project Settings ▸ Audio**
+    - **System Sample Rate**: **44100 Hz**
+        - 오디오 엔진이 내부 믹싱/출력을 계산하는 샘플레이트.
+        음악/효과음 원본이 대개 44.1k로 제작됨 → 설정 시, 불필요한 리샘플링 감
+    - **DSP Buffer Size**: **Best latency** (팝/끊김 생기면 *Good performance*로 변경)
+        - 오디오 엔진이 한 번에 처리하는 버퍼 길이(프레임 수).
+        버퍼가 짧을수록 지연 감소.  
+        길수록 안정성 상승 / CPU 여유 증가.
+    - **Virtual Voices**: **128**, **Real Voices**: **32** (효과음이 아주 많지 않다면 24~32면 충분)
+        - **Max Real Voices** = 실제로 믹싱되는 동시 재생 한도. 이 수를 넘는 소리는 **Priority**가 낮은 것부터 “가상화(무음 처리)”됨.
+        - **Max Virtual Voices** = 큐/가상 슬롯 한도. 재생은 유지하되 출력은 안 함
+        (우선순위 올라오면 다시 들리게 됨).
+        - 2D 캐주얼에서 동시 효과음 24~32면 충분, 나머지는 대기(가상화)로도 충분. 
+        너무 크게 잡으면 CPU 비용 증가, 너무 작으면 중요한 소리가 씹힐 수 있음.
+        ⇒ 중요한 효과음들은 **Priority** 높게 설정하여 들리도록 처리 필요
+    - **Disable Unity Audio**: Off
+        - Unity 오디오 엔진 자체를 끌건지. → 왜 끔? 써야지.
+    - **Ambisonic Decoder Plugin / Spatializer**: 사용 안 함(2D 게임이면 비활성)
+
+### Audio 임포트 규칙 설정 (SFX / BGM 분리)
+
+- **짧은 효과음 SFX (버튼, 히트, 코인 등)**
+    - **Load Type**: **Decompress On Load**
+        - **로드 시점에 한 번** 압축을 풀어 **RAM에 PCM으로 상주시키는 것** 
+        → 재생할 때 **CPU 스파이크가 없음**.
+        - 짧은 SFX는 용량이 작아서 **메모리 비용이 감당 가능**하고, 자주/동시에 많이 재생해도 안정적.
+    - **Compression Format**: **ADPCM** (*또는* PCM)
+        - **PCM**: 메모리는 가장 크지만 **디코딩 오버헤드 0**.
+        - **ADPCM**: 대략 **4:1 압축** + **디코딩이 매우 가벼움** → 빌드 크기 감소, 로드 속도도 빠른 편.
+        - 기존 Vorbis는 압축률은 좋지만 **해제 비용이 큼. 
+        → 초단발 SFX사운드 출력 시, CPU 과부화 현상이 일어날 수 있음**
+    - **Sample Rate Setting**: **Preserve** (또는 **44100 Hz** 고정)
+        - 이전에 Project Setting에서 설정된 값으로 설정.
+    - **Force To Mono**: **On** (스테레오가 꼭 필요할 때만 Off)
+        - SFX는 스테레오일 필요가 드뭄 → **메모리/대역폭 절감(딱 절반)**.
+    - **Preload Audio Data**: **On**
+        - 씬 진입 시점에 미리 메모리로 적재 → **첫 재생 딜레이/끊김 방지**.
+
+### (B) 긴 배경음 BGM
+
+- **Load Type**: **Streaming**
+    - 길고 큰 파일(BGM)은 **RAM에 상주시키지 말고** 디스크에서 **스트리밍 재생** → **메모리 절약**.
+- **Compression Format**: **Vorbis**, **Quality 0.5 ~ 0.7**
+    - 긴 음원에 **압축 효율 최고**(용량 감소).
+    스트리밍과 궁합이 좋아 **메모리/IO 효율** 우수.
+    BGM은 1~2트랙 동시 재생이므로 **디코드 CPU 부담도 감당 가능**.
+- **Sample Rate Setting**: **Preserve**
+- **Force To Mono**: Off (BGM은 스테레오 유지)
+    - 음악의 공간감/폭 손실 방지.
+- **Preload Audio Data**: **Off**
+    - 굳이 미리 메모리에 올릴 필요 없음. (스트리밍이 하니까).
+    - 필요하면 **Load In Background**로 로딩 비동기화.
+
+### AudioMixer 구성 (볼륨/밸런스 표준)
+
+- 프로젝트 창 **Create ▸ Audio Mixer** → 이름 **Master**
+    - **Groups**: `Music`, `SFX` 두 개 추가
+    - 각 그룹에서 **Volume** 파라미터 오른쪽 클릭 → **Expose ‘Volume’**
+        - 이름을 `MusicVol`, `SFXVol`로 노출
+- 볼륨 코드(슬라이더 dB 제어)
+
+```csharp
+using UnityEngine;
+using UnityEngine.Audio;
+
+public class AudioVolume : MonoBehaviour {
+    [SerializeField] AudioMixer mixer;
+    public void SetMusic(float linear01) {
+        mixer.SetFloat("MusicVol", Mathf.Log10(Mathf.Clamp(linear01, 0.0001f, 1f)) * 20f);
+    }
+    public void SetSFX(float linear01) {
+        mixer.SetFloat("SFXVol", Mathf.Log10(Mathf.Clamp(linear01, 0.0001f, 1f)) * 20f);
+    }
+}
+
+```
+
+- UI 슬라이더(0~1)를 연결하면 dB로 변환되어 자연스러운 볼륨 스케일이 됨.
+- 값은 `PlayerPrefs`에 저장/복원하면 끝.
+- 나중에 옵션/설정 화면에서 “음악/효과음 볼륨”을 슬라이더로 조절할 수 있게 하려고 미리 준비해두는 공용 볼륨 컨트롤러 용 초기 코드
+
+### 메모리 최적화
+
+1. **Stack Trace 최소화(릴리스 대비)**
+- 메뉴: **Edit ▸ Project Settings ▸ Player ▸ Android ▸ Other** Setting 하단의 **Stack Trace** 섹션
+- 각 Log Type(Info/Warning/Error/Exception/Assert) > **Exception=Script Only**, 나머지 **None**
+    - **Stack Trace** = 로그를 뿌릴 때 “어떤 함수 호출 경로로 여기까지 왔는지”를 문자열로 붙여주는 것.
+    - 붙일수록 **문자열 생성/포맷팅/메모리 할당(GC)** 과 **CPU 시간**이 듦.
+        
+        특히 `Debug.Log/Warning/Error`가 **많이 찍히는 프로젝트**에선 오버헤드가 눈에 띄게 커짐.
+        
+    - 안드로이드 `logcat`은 메시지 길이 제한도 있어 긴 스택은 잘려서 **실효성도 낮을 수 있음**.
+
+---
+
+### 이후 최적화 관련 테스트 및 프로파일링 관련.,
+
+1) 디바이스에서 개발 빌드 + 자동 프로파일 연결
+
+1. **File ▸ Build Settings…**
+    - **Development Build**: On
+    - **Autoconnect Profiler**: On
+    - **Script Debugging**: Off (기본 성능 왜곡 방지)
+    - **Build & Run**로 폰에 설치/실행
+2. 에디터 상단 **Profiler** 창 열기
+    - 상단 **Attach to Player** 드롭다운에서 **<DeviceName>** 선택(자동 연결 확인)
+    - **Deep Profile**는 **Off** (필요할 때만 잠깐 켜기)
+
+2) 프로파일러 모듈 구성
+
+- **CPU Usage**, **Rendering**, **Memory**, **Audio**, **GC Alloc** 모듈 활성
+- **Record** 버튼 On 후 두 구간을 각각 60~90초 기록:
+    - **A. 타이틀/메인 메뉴(Idle)**
+    - **B. 간단한 플레이 루프(실제 게임 화면)**
+
+3) 수집할 핵심 지표(목표 범위)
+
+- **CPU Frame(ms)**: 60fps 기준 **16.7ms 이하**
+    - Main Thread < ~10ms, Render Thread < ~6ms면 매우 여유
+- **Batches(드로우콜)**: 2D 캐주얼 기준 **< 100** 권장 (UI 포함)
+- **Triangles**: **< 100k** (스프라이트는 보통 훨씬 낮음)
+- **GC Alloc/frame**: **0 B** 목표 (지속 할당 금지, 스파이크만 허용)
+- **Used Texture Memory**: 초기 빌드 **< 100~150MB** 권장
+- **Audio Voices (playing)**: **< 16** 평균
+
+> Frame Debugger도 켜서 배칭 확인: 같은 SpriteAtlas + 동일 머티리얼이면 잘 묶여야 정상.
+> 
+
+4) Memory Profiler 스냅샷(누수 사전 차단)
+
+1. **Window ▸ Package Manager** → **Memory Profiler** 설치
+2. 디바이스 실행 중 **Take Snapshot** x 2:
+    - **메뉴/Idle 시점**, **게임플레이 60초 후**
+3. 두 스냅샷 비교:
+    - **Textures** 상위 용량(>1MB) 목록 확인(의도한 아틀라스만 포함?)
+    - **Managed Objects** 탭에서 **Retained**가 계속 증가하는지(누수 의심)
+    - Addressables 사용 시 **Release** 누락 자산이 없는지

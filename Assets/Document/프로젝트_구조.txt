@@ -1,0 +1,55 @@
+Assets/
+  _App/                          # 게임 ‘컨텐츠’ 영역
+    Scenes/                      # 씬(이름 규칙: 00_Boot, 10_Menu, 20_Game ...)
+      00_Boot.unity
+      10_Menu.unity
+      20_Game.unity
+    Scripts/                     # 게임 로직 (asmdef 권장: App.Game)
+      Gameplay/
+      UI/
+      Systems/
+    Prefabs/
+      UI/
+      Actors/
+      Props/
+    UI/                          # UI 뷰/스프라이트/에셋(씬은 Scenes에만)
+      Sprites/
+      Atlases/                   # Sprite Atlas(v2) 자산(= *.spriteatlasv2)
+        UI_Atlas.spriteatlasv2
+      Fonts/
+      Materials/
+    Art/                         # 게임 스프라이트(비UI)
+      Sprites/
+      Atlases/
+        Gameplay_Atlas.spriteatlasv2
+      Materials/
+    Audio/
+      BGM/
+      SFX/
+    Addressables/                # 그룹/라벨 운영 참고자료, 혹은 그룹별 SO 설정 등
+    Presets/                     # Import Preset 보관(텍스처/오디오 등)
+      Tex_Sprite_Default.preset
+      Tex_UI_Sprite.preset
+    Settings/                    # 프로젝트 세팅 에셋(입력, 품질, 그래픽 등)
+      InputSystem.inputactions
+      QualitySettings.asset
+    Data/                        # ScriptableObject, 밸런스 데이터, Localization 테이블
+  _Core/                         # 공용/엔진 레벨(게임과 분리 유지)
+    Scripts/                     # 코어 유틸/부트/플랫폼 래퍼 (asmdef: App.Core)
+      Boot/
+        AppBootstrap.cs
+        Physics2DSetup.cs
+      Services/
+      Utils/
+    Shaders/
+    Materials/
+    Addressables/                # 코어 리소스(공통 아이콘 등)
+    Presets/                     # 전역 Import Preset(공용)
+  Plugins/                       # 외부 SDK/플러그인(Native/Managed)
+    Android/
+    iOS/
+    Managed/
+  ThirdParty/                    # 오픈소스/상용 애셋(원본 유지, 수정은 Fork 폴더)
+    <AssetName>/
+  Editor/                        # 에디터 전용 툴/메뉴 (asmdef: App.Editor)
+  Tests/                         # PlayMode/Editor 테스트

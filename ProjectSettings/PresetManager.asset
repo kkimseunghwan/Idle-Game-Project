@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1386491679 &1
+PresetManager:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_DefaultPresets:
+  - first:
+      m_NativeTypeID: 1020
+      m_ManagedTypePPtr: {fileID: 0}
+      m_ManagedTypeFallback: 
+    second:
+    - m_Preset: {fileID: 2655988077585873504, guid: a40db84a5c5ba2e40b913718b7579180, type: 2}
+      m_Filter: glob:"Assets/_App/Audio/SFX/**/*"
+      m_Disabled: 0
+    - m_Preset: {fileID: 2655988077585873504, guid: 9efc2267a1ada2049b43fc54256ed403, type: 2}
+      m_Filter: glob:"Assets/_App/Audio/BGM/**/*"
+      m_Disabled: 0
+  - first:
+      m_NativeTypeID: 1006
+      m_ManagedTypePPtr: {fileID: 0}
+      m_ManagedTypeFallback: 
+    second:
+    - m_Preset: {fileID: 2655988077585873504, guid: ba4912ff7a18567478ef0cda5631c31a, type: 2}
+      m_Filter: glob:"Assets/**/*"
+      m_Disabled: 0
+    - m_Preset: {fileID: 2655988077585873504, guid: c699c5a3a66b31543aed7c4ba9a9a683, type: 2}
+      m_Filter: glob:"Assets/_App/UI/**/*"
+      m_Disabled: 0
+    - m_Preset: {fileID: 2655988077585873504, guid: 8a1c53518df91034aa3c29dfa223ee83, type: 2}
+      m_Filter: glob:"Assets/_App/Art/Sprites/*"
+      m_Disabled: 0
+    - m_Preset: {fileID: 2655988077585873504, guid: 8a1c53518df91034aa3c29dfa223ee83, type: 2}
+      m_Filter: glob:"Assets/_App/UI/Sprites/*"
+      m_Disabled: 0
